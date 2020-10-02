@@ -7,7 +7,7 @@ import numpy as np
 
 def to_fastText(X, y, data_dir, expname, mask=None, mode='train'):
     path = os.path.join(f'{data_dir}{expname}/data_temp.{mode}')
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf-8') as f:
         for i in range(y.shape[0]):
             if mask is None:
                 f.write('__' + 'label' + '__' + str(y[i]) + ' , ' + X[i] + '\n')
@@ -17,14 +17,17 @@ def to_fastText(X, y, data_dir, expname, mask=None, mode='train'):
     return path
 
 
-def from_fastText(data_dir, mode='train'):
+def get_data(data_dir, mode='train'):
     X, y = [], []
-    with open(f'{data_dir}.{mode}', 'r') as f:
+    sample_prob = 0.1
+    with open(f'{data_dir}.{mode}', 'r', encoding='utf-8') as f:
         for line in f:
-            label = int(line.split(' , ')[0].split('__')[-1].strip())
-            assert(isinstance(label, int))
-            y.append(label)
-            X.append(line[13:].strip('\n'))
+            if np.random.random_sample() < sample_prob:
+                label = int(line.split(',')[0])
+                assert(isinstance(label, int))
+                y.append(label)
+                feature = line.split(',')[2]
+                X.append(feature.strip('\n'))
     return X, y
 
 
