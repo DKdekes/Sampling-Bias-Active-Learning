@@ -19,10 +19,10 @@ def to_fastText(X, y, data_dir, expname, mask=None, mode='train'):
 
 def get_data(data_dir, mode='train'):
     X, y = [], []
-    sample_prob = 0.1
+    sample_prob = 0.01
     with open(f'{data_dir}.{mode}', 'r', encoding='utf-8') as f:
         for line in f:
-            if np.random.random_sample() < sample_prob:
+            if np.random.random_sample() <= sample_prob:
                 label = int(line.split(',')[0])
                 assert(isinstance(label, int))
                 y.append(label)
@@ -61,7 +61,8 @@ def round_(num, dec:int=2):
 
 def rearrange_label_proba(y_prob, labels):
     labels = np.array(list(map(get_labels, labels)))
-    return np.array([subarray[np.argsort(index)] for subarray, index in zip(y_prob, labels)])
+    ret = np.array([subarray[np.argsort(index)] for subarray, index in zip(y_prob, labels)])
+    return ret
 
 
 def get_logger(folder):

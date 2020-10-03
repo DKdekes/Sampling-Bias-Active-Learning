@@ -76,7 +76,7 @@ if __name__ == '__main__':
                 assert(np.all(dset.is_train[train_idx[deleted_idx]]))
                 dset.is_train[train_idx[deleted_idx]] = False
 
-            # metric_logger_test.add(itr, y_prob_test, dset.y_test)
+            metric_logger_test.add(itr, y_prob_test, dset.y_test)
             del y_prob_all, y_prob_test, pool_idx, train_idx
             gc.collect()
 

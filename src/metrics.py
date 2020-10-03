@@ -39,8 +39,9 @@ def get_coreset(y_feat, train_idx, pool_idx, query_size):
     #print(acq_idx,minmax_dist)
     return np.array(acq_idx), np.array(minmax_dist)
 
+
 def accuracy(y_prob, y_true, return_vec=False):
-    y_pred = np.argmax(y_prob, axis=1)
+    y_pred = np.argmax(y_prob, axis=1) # expecting y_pred to be all 0s due to how probabilities are rearranged in Bert.predict_proba()
     arr = (y_pred == y_true)
     if return_vec:
         return arr

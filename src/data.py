@@ -85,7 +85,6 @@ class BertData:
     def __init__(self, opts):
         self.opts = opts
         self.X, self.y = utils.get_data(opts.data_dir + opts.dataset, mode='train')
-        self.X, self.y = np.array(self.X), np.array(self.y)
         self.X_test, self.y_test = utils.get_data(opts.data_dir + opts.dataset, mode='test')
         self.y, self.y_test = np.array(self.y), np.array(self.y_test)
         self.label_enc = preprocessing.LabelEncoder()
@@ -106,10 +105,10 @@ class BertData:
     def generate_data(self, train=True, use_mask=True):
         mask = self.is_train if train else ~self.is_train
         if use_mask:
-            self.train_data_loader = self.create_data_loader(self.X[mask], self.y[mask])
+            masked_X = [X for X, s in zip(self.X, mask) if s]
+            self.train_data_loader = self.create_data_loader(masked_X, self.y[mask])
         else:
             self.train_data_loader = self.create_data_loader(self.X, self.y)
-
 
     def create_data_loader(self, X, y):
         ds = TransformerDataset(
@@ -120,7 +119,7 @@ class BertData:
         return DataLoader(
             ds,
             batch_size=self.opts.batch_size,
-            num_workers=4
+            num_workers=8
         )
 
 
@@ -142,7 +141,7 @@ class TransformerDataset(torch.utils.data.Dataset):
             add_special_tokens=True,
             max_length=self.opts.max_len,
             return_token_type_ids=False,
-            pad_to_max_length=True,
+            padding='max_length',
             truncation=True,
             return_attention_mask=True,
             return_tensors='pt'
