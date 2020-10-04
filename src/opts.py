@@ -34,8 +34,8 @@ def myargparser():
     transformer_args = parser.add_argument_group('Transformer Model Arguments')
     transformer_args.add_argument('--pretrained_model_name', type=str, default='bert-base-uncased')
     transformer_args.add_argument('--dropout', type=float, default=0.2, help='dropout percentage in dense net')
-    transformer_args.add_argument('--max_len', type=int, default=100, help='max token length of feature')
-    transformer_args.add_argument('--batch_size', type=int, default=16, help='batch size when training dense net on transformer')
+    transformer_args.add_argument('--max_len', type=int, default=128, help='max token length of feature. defaults to max length for bert')
+    transformer_args.add_argument('--batch_size', type=int, default=32, help='batch size when training dense net on transformer')
 
     misc_args = parser.add_argument_group('Cleaning and backup arguments')
     misc_args.add_argument('--seed', type=int, default=0, help='Seed value for training')

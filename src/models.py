@@ -35,30 +35,53 @@ class Bert(torch.nn.Module):
 
     def fit_(self, dset):
         dset.generate_data(train=True)
-        for _ in range(self.opt.num_epochs):
+        correct_predictions = 0
+
+        for _ in range(self.opt.num_epochs): # ~4m / epoch (876 examples) and ~13.6GB RAM at num_workers = 8, go to 16
             model = self.train()
+            n_examples = 0
             for d in tqdm(dset.train_data_loader):
+                n_examples += len(d)
                 input_ids = d["input_ids"].to(self.device)
                 attention_mask = d["attention_mask"].to(self.device)
                 labels = d["label"].to(self.device)
-
                 outputs = model(
                     input_ids=input_ids,
                     attention_mask=attention_mask
                 )
+                _, preds = torch.max(outputs, dim=1)
+                correct_predictions += torch.sum(preds == labels)
                 loss = self.loss_fn(outputs, labels)
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 self.optimizer.step()
                 self.optimizer.zero_grad()
+            print(correct_predictions.double() / n_examples)
 
-    def get_features_(self, X):
-        # don't need to implement for now
-        pass
-
-    def predict_proba_(self, dset, train=True):
+    def predict(self, dataloader):
         model = self.eval()
         all_probs = []
+        correct_predictions = 0
+        with torch.no_grad():
+            for d in tqdm(dataloader):
+                input_ids = d['input_ids'].to(self.device)
+                attention_mask = d['attention_mask'].to(self.device)
+                targets = d["label"].to(self.device)
+                outputs = model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask
+                )
+                for prob in outputs:
+                    all_probs.append(prob)
+        all_probs = torch.stack(all_probs)
+        all_probs = all_probs.cpu()
+        all_probs = all_probs.numpy()
+        # return the softmax probability of the predicted class for each prediction
+        # todo: get better understanding of uncertainty calculation. I don't understand why we need to do the following line.
+        # ret = np.array([subarray[np.argsort(index)] for subarray, index in zip(all_probs, all_preds)])
+        return all_probs
+
+    def predict_proba_(self, dset, train=True):
         if train:
             # this dataloader will contain all the training data
             dset.generate_data(use_mask=False)
@@ -66,23 +89,12 @@ class Bert(torch.nn.Module):
         else:
             # this dataloader will contain all the test data
             dataloader = dset.test_data_loader
-        with torch.no_grad():
-            for d in tqdm(dataloader):
-                input_ids = d['input_ids'].to(self.device)
-                attention_mask = d['attention_mask'].to(self.device)
-                outputs = model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask
-                )
-                for prob in outputs:
-                    all_probs.append(prob)
-        all_probs = torch.tensor(all_probs).cpu().numpy()
-        # return the softmax probability of the predicted class for each prediction
-        # todo: get better understanding of uncertainty calculation. I don't understand why we need to do the following line.
-        # ret = np.array([subarray[np.argsort(index)] for subarray, index in zip(all_probs, all_preds)])
-        return all_probs
+        return self.predict(dataloader)
 
     def save_model_(self, path, itr, quantized=True):
+        pass
+
+    def get_features_(self, X):
         pass
 
 
