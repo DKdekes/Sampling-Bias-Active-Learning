@@ -19,7 +19,7 @@ def to_fastText(X, y, data_dir, expname, mask=None, mode='train'):
 
 def get_data(data_dir, mode='train'):
     X, y = [], []
-    sample_prob = 1
+    sample_prob = 0.1
     with open(f'{data_dir}.{mode}', 'r', encoding='utf-8') as f:
         for line in f:
             if np.random.random_sample() <= sample_prob:

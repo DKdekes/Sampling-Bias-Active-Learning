@@ -100,17 +100,17 @@ class BertData:
         num_init = int(opts.init_train_percent * opts.num_points)
         self.is_train = utils.get_mask(opts.num_points, num_init)
         self.train_data_loader = None
-        self.test_data_loader = self.create_data_loader(self.X_test, self.y_test)
+        self.test_data_loader = self.create_data_loader(self.X_test, self.y_test, shuffle=False)
 
     def generate_data(self, train=True, use_mask=True):
         mask = self.is_train if train else ~self.is_train
         if use_mask:
             masked_X = [X for X, s in zip(self.X, mask) if s]
-            self.train_data_loader = self.create_data_loader(masked_X, self.y[mask])
+            self.train_data_loader = self.create_data_loader(masked_X, self.y[mask], shuffle=train)
         else:
-            self.train_data_loader = self.create_data_loader(self.X, self.y)
+            self.train_data_loader = self.create_data_loader(self.X, self.y, shuffle=train)
 
-    def create_data_loader(self, X, y):
+    def create_data_loader(self, X, y, shuffle=True):
         ds = TransformerDataset(
             features=X,
             labels=y,
@@ -119,7 +119,8 @@ class BertData:
         return DataLoader(
             ds,
             batch_size=self.opts.batch_size,
-            num_workers=8
+            num_workers=4,
+            shuffle=shuffle
         )
 
 

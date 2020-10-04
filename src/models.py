@@ -6,72 +6,66 @@ from sklearn.naive_bayes import MultinomialNB
 import utils
 import torch
 from torch.utils.data import DataLoader
-from transformers import BertTokenizer, BertModel, AdamW, get_linear_schedule_with_warmup
+from transformers import BertForSequenceClassification, AdamW
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 
 
 class Bert(torch.nn.Module):
-    def __init__(self, opt):
+    def __init__(self, opts):
         super(Bert, self).__init__()
-        self.lm = BertModel.from_pretrained(opt.pretrained_model_name)
-        self.dropout = torch.nn.Dropout(p=opt.dropout)
-        self.linear = torch.nn.Linear(self.lm.config.hidden_size, opt.num_classes)
-        self.opt = opt
+        self.model = BertForSequenceClassification.from_pretrained(opts.pretrained_model_name,
+                                                                   num_labels=opts.num_classes)
+        self.opts = opts
         self.device = 'cuda'
         self.to(self.device)
-        self.loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
-        self.optimizer = AdamW(self.parameters(), lr=2e-5, correct_bias=False)
+        self.optimizer = AdamW(self.parameters(), lr=2e-5)
         self.softmax = torch.nn.Softmax()
 
-    def forward(self, input_ids, attention_mask):
-        _, pooled_output = self.lm(
-            input_ids=input_ids,
-            attention_mask=attention_mask
-        )
-        dropout = self.dropout(pooled_output)
-        linear = self.linear(dropout)
-        return self.softmax(linear)
+    def forward(self, input_ids, attention_mask, labels=None):
+        output = self.model(input_ids=input_ids,
+                            attention_mask=attention_mask,
+                            labels=labels,
+                            return_dict=True)
+        return output.loss, output.logits
 
     def fit_(self, dset):
         dset.generate_data(train=True)
-        correct_predictions = 0
-
-        for _ in range(self.opt.num_epochs): # ~4m / epoch (876 examples) and ~13.6GB RAM at num_workers = 8, go to 16
-            model = self.train()
+        model = self.train()
+        for _ in range(self.opts.num_epochs):
+            correct_predictions = 0
             n_examples = 0
             for d in tqdm(dset.train_data_loader):
-                n_examples += len(d)
+                n_examples += self.opts.batch_size
                 input_ids = d["input_ids"].to(self.device)
                 attention_mask = d["attention_mask"].to(self.device)
                 labels = d["label"].to(self.device)
-                outputs = model(
+                loss, logits = model(
                     input_ids=input_ids,
-                    attention_mask=attention_mask
+                    attention_mask=attention_mask,
+                    labels=labels
                 )
-                _, preds = torch.max(outputs, dim=1)
+                # probs = torch.nn.functional.softmax(logits, dim=0) don't need softmax for preds
+                _, preds = torch.max(logits, dim=1)
                 correct_predictions += torch.sum(preds == labels)
-                loss = self.loss_fn(outputs, labels)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-                self.optimizer.step()
                 self.optimizer.zero_grad()
-            print(correct_predictions.double() / n_examples)
+                loss.backward()
+                self.optimizer.step()
+            print('train acc: ' + str(correct_predictions.double() / n_examples))
 
     def predict(self, dataloader):
         model = self.eval()
         all_probs = []
-        correct_predictions = 0
         with torch.no_grad():
             for d in tqdm(dataloader):
                 input_ids = d['input_ids'].to(self.device)
                 attention_mask = d['attention_mask'].to(self.device)
-                targets = d["label"].to(self.device)
-                outputs = model(
+                _, logits = model(
                     input_ids=input_ids,
                     attention_mask=attention_mask
                 )
-                for prob in outputs:
+                probs = torch.nn.functional.softmax(logits, dim=0)
+                for prob in probs:
                     all_probs.append(prob)
         all_probs = torch.stack(all_probs)
         all_probs = all_probs.cpu()
@@ -82,6 +76,11 @@ class Bert(torch.nn.Module):
         return all_probs
 
     def predict_proba_(self, dset, train=True):
+        """
+        This is the method called in trainer to get the predicted probabilities for a set of examples.
+        There are two time's this is called right now; to get the probabilities for the entire train set in order
+        to perform the uncertainty query, and to get the probabilities on the test set to calculate the accuracy.
+        """
         if train:
             # this dataloader will contain all the training data
             dset.generate_data(use_mask=False)

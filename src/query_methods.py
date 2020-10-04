@@ -1,6 +1,7 @@
 import metrics
 import numpy as np
 
+
 class AcquisePoints():
     def __init__(self, opt):
         self.query_type = opt.query_type
