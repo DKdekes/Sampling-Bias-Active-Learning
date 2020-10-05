@@ -12,6 +12,7 @@ def myargparser():
                                                                           'amazon_review_full'], help='Name of dataset Options: agnews')
     data_args.add_argument('--data_dir', type=str, default='../data/', help='Data directory (Eg: ../data/)')
     data_args.add_argument('--num_classes', type=int, default=-1, help='Number of classes in the dataset')
+    data_args.add_argument('--trainset_pct', type=int, default=0.2, help='Percentage of dataset to use. Takes seeded random sample.')
 
     data_args.add_argument('--num_points', type=int, default=0, help='Number of train samples')
     data_args.add_argument('--num_test', type=int, default=0, help='Number of testing samples')

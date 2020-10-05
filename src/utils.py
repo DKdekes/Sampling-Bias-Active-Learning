@@ -17,13 +17,12 @@ def to_fastText(X, y, data_dir, expname, mask=None, mode='train'):
     return path
 
 
-def get_data(data_dir, mode='train'):
+def get_data(data_dir, mode='train', dset_pct=1):
     X, y = [], []
     rando = np.random.RandomState(seed=1)
-    sample_prob = 1
     with open(f'{data_dir}.{mode}', 'r', encoding='utf-8') as f:
         for line in f:
-            if rando.random_sample() <= sample_prob:
+            if rando.random_sample() <= dset_pct:
                 label = int(line.split(',')[0])
                 assert(isinstance(label, int))
                 y.append(label)

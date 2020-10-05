@@ -84,7 +84,7 @@ class NaiveBayesData(Data):
 class BertData:
     def __init__(self, opts):
         self.opts = opts
-        self.X, self.y = utils.get_data(opts.data_dir + opts.dataset, mode='train')
+        self.X, self.y = utils.get_data(opts.data_dir + opts.dataset, mode='train', dset_pct=opts.trainset_pct)
         self.X_test, self.y_test = utils.get_data(opts.data_dir + opts.dataset, mode='test')
         self.y, self.y_test = np.array(self.y), np.array(self.y_test)
         self.label_enc = preprocessing.LabelEncoder()
