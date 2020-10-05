@@ -64,7 +64,7 @@ class Bert(torch.nn.Module):
                     input_ids=input_ids,
                     attention_mask=attention_mask
                 )
-                probs = torch.nn.functional.softmax(logits, dim=0)
+                probs = torch.nn.functional.softmax(logits, dim=1)
                 for prob in probs:
                     all_probs.append(prob)
         all_probs = torch.stack(all_probs)

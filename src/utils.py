@@ -19,10 +19,11 @@ def to_fastText(X, y, data_dir, expname, mask=None, mode='train'):
 
 def get_data(data_dir, mode='train'):
     X, y = [], []
-    sample_prob = 0.1
+    rando = np.random.RandomState(seed=1)
+    sample_prob = 1
     with open(f'{data_dir}.{mode}', 'r', encoding='utf-8') as f:
         for line in f:
-            if np.random.random_sample() <= sample_prob:
+            if rando.random_sample() <= sample_prob:
                 label = int(line.split(',')[0])
                 assert(isinstance(label, int))
                 y.append(label)

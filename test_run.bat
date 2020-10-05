@@ -1,1 +1,0 @@
-python src\main.py --dataset dbpedia --num_classes 13 --num_points 559999 --num_test 69999 --model FastText
