@@ -6,7 +6,7 @@ from sklearn.naive_bayes import MultinomialNB
 import utils
 import torch
 from torch.utils.data import DataLoader
-from transformers import BertForSequenceClassification, AdamW
+from transformers import BertForSequenceClassification, AdamW, DistilBertForSequenceClassification
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 
@@ -14,8 +14,8 @@ from sklearn.metrics import accuracy_score
 class Bert(torch.nn.Module):
     def __init__(self, opts):
         super(Bert, self).__init__()
-        self.model = BertForSequenceClassification.from_pretrained(opts.pretrained_model_name,
-                                                                   num_labels=opts.num_classes)
+        self.model = DistilBertForSequenceClassification.from_pretrained(opts.pretrained_model_name,
+                                                                         num_labels=opts.num_classes)
         self.opts = opts
         self.device = 'cuda'
         self.to(self.device)

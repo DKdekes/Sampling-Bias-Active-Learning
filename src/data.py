@@ -4,7 +4,7 @@ import utils
 import torch
 import torch.utils.data
 from torch.utils.data import DataLoader
-from transformers import BertTokenizer
+from transformers import BertTokenizer, DistilBertTokenizer
 
 
 class Data:
@@ -128,7 +128,7 @@ class TransformerDataset(torch.utils.data.Dataset):
     def __init__(self, features, labels, opts):
         self.features = features
         self.labels = labels
-        self.tokenizer = BertTokenizer.from_pretrained(opts.pretrained_model_name)
+        self.tokenizer = DistilBertTokenizer.from_pretrained(opts.pretrained_model_name)
         self.opts = opts
 
     def __len__(self):
